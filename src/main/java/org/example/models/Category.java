@@ -1,4 +1,4 @@
-package Models;
+package org.example.models;
 
 public enum Category {
     MUSEUM,
