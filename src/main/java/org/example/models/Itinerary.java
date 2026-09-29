@@ -32,4 +32,29 @@ public class Itinerary {
     public BigDecimal getTotalPrice() {
         return totalPrice;
     }
+    @Override
+    public String toString() {
+        if (places.isEmpty()) {
+            return "No places fit your time and budget.";
+        }
+
+        StringBuilder result = new StringBuilder("Your itinerary:\n");
+
+        for (int i = 0; i < places.size(); i++) {
+            result.append(i + 1)
+                    .append(". ")
+                    .append(places.get(i))
+                    .append('\n');
+        }
+
+        result.append("------------------------------\n")
+                .append("Total time: ")
+                .append(totalMinutes)
+                .append(" min\n")
+                .append("Total cost: ")
+                .append(totalPrice)
+                .append(" EUR");
+
+        return result.toString();
+    }
 }

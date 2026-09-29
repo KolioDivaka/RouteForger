@@ -26,41 +26,17 @@ public class Place {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public void setDurationMinutes(int durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
-    public void setPriceEur(BigDecimal priceEur) {
-        this.priceEur = priceEur;
-    }
 
     public Set<String> getTags() {
         return tags;
     }
 
-    public void setTags(Set<String> tags) {
-        this.tags = tags;
-    }
 
     public BigDecimal getPriceEur() {
         return priceEur;
@@ -72,13 +48,13 @@ public class Place {
 
     @Override
     public String toString() {
-        return "Place{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", category=" + category +
-                ", durationMinutes=" + durationMinutes +
-                ", priceEur=" + priceEur +
-                ", tags=" + tags +
-                '}';
+        return "%s [%s] — %d min | %s EUR | %s"
+                .formatted(
+                        name,
+                        category,
+                        durationMinutes,
+                        priceEur,
+                        String.join(", ", tags)
+                );
     }
 }

@@ -119,4 +119,13 @@ class GreedyPlannerTest {
 
         assertEquals(List.of(museum), result.getPlaces());
     }
+    @Test
+    void emptyItineraryShowsHelpfulMessage() {
+        Itinerary itinerary = new Itinerary(List.of());
+
+        assertEquals(
+                "No places fit your time and budget.",
+                itinerary.toString()
+        );
+    }
 }
