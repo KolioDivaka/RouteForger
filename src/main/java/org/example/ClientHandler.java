@@ -8,6 +8,7 @@ import org.example.services.GreedyPlanner;
 import org.example.services.PlaceService;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.*;
 
 public class ClientHandler {
@@ -21,59 +22,79 @@ public class ClientHandler {
     }
 
     public void run() {
-        while (true) {
-            IO.println("\n=== ROUTE FORGER ===");
-            IO.println("1. List places");
-            IO.println("2. Add place");
-            IO.println("3. Remove place");
-            IO.println("4. Generate itinerary");
-            IO.println("0. Exit");
-            IO.println("Choose an option:");
+        try {
+            while (true) {
+                IO.println("\n=== ROUTE FORGER ===");
+                IO.println("1. List places");
+                IO.println("2. Add place");
+                IO.println("3. Remove place");
+                IO.println("4. Generate itinerary");
+                IO.println("5. Search places by name");
+                IO.println("0. Exit");
+                IO.println("Choose an option:");
 
-            String choice = IO.readln().trim();
+                String choice = IO.readln().trim();
 
-            switch (choice) {
-                case "1" -> listPlaces();
-                case "2" -> addPlace();
-                case "3" -> removePlace();
-                case "4" -> generateItinerary();
-                case "5" -> searchPlaceByName();
-                case "0" -> {
-                    IO.println("Goodbye!");
-                    return;
+                switch (choice) {
+                    case "1" -> listPlaces();
+                    case "2" -> addPlace();
+                    case "3" -> removePlace();
+                    case "4" -> generateItinerary();
+                    case "5" -> searchPlaceByName();
+                    case "0" -> {
+                        IO.println("Goodbye!");
+                        return;
+                    }
+                    default -> IO.println("Unknown option. Choose 0–5.");
                 }
-                default -> IO.println("Unknown option. Choose 0–4.");
             }
+        }catch (SQLException e){
+            IO.println("DATABASE ERRORS!");
         }
     }
     public void listPlaces(){
-        List<Place> places = placeService.getAllPlaces();
+        try {
 
-        if(places==null || places.isEmpty()) {
-           IO.println("No places found!");
-           return;
-        }
+            List<Place> places = placeService.getAllPlaces();
 
-        int num = 1;
-        for(Place p : places){
-            IO.println(num+". "+ p);
+            if(places==null || places.isEmpty()) {
+               IO.println("No places found!");
+               return;
+            }
+
+            int num = 1;
+            for(Place p : places){
+                IO.println(num+". "+ p);
+                num++;
+            }
+        }catch (SQLException e){
+            IO.println("Could not get places: " + e.getMessage());
         }
     }
 
-    public void searchPlaceByName(){
+    public void searchPlaceByName() {
+        IO.println("Enter a name to search:");
         String name = IO.readln();
-        if(name.isEmpty()){
-            IO.println("Search Cancelled!!!");
+
+        if (name.isBlank()) {
+            IO.println("Search cancelled.");
             return;
         }
 
+        try {
+            List<Place> foundPlaces = placeService.searchPlaces(name);
 
-        List<Place> foundPlaces = placeService.searchByName(name);
+            if (foundPlaces.isEmpty()) {
+                IO.println("No matches found!");
+                return;
+            }
 
-        if(foundPlaces.isEmpty()){
-            IO.println("No matches found!");
+            for (int i = 0; i < foundPlaces.size(); i++) {
+                IO.println((i + 1) + ". " + foundPlaces.get(i));
+            }
+        } catch (SQLException e) {
+            IO.println("Could not search places: " + e.getMessage());
         }
-
     }
 
     public void addPlace(){
@@ -108,24 +129,25 @@ public class ClientHandler {
         }catch (NumberFormatException e){
           IO.println("Please enter valid numbers for duration and price.");
         }
-        catch (IllegalArgumentException e){
+        catch (IllegalArgumentException|SQLException e){
             IO.println("Could not add place: " + e.getMessage());
         }
     }
 
-    public void removePlace() {
-        List<Place> places = placeService.getAllPlaces();
+    public void removePlace() throws SQLException {
 
-        if (places.isEmpty()) {
-            IO.println("There are no places to delete.");
-            return;
-        }
+            List<Place> places = placeService.getAllPlaces();
 
-        for (int i = 0; i < places.size(); i++) {
-            IO.println((i + 1) + ". " + places.get(i));
-        }
+            if (places.isEmpty()) {
+                IO.println("There are no places to delete.");
+                return;
+            }
 
-        IO.println("Choose a place to delete (1-" + places.size() + "):");
+            for (int i = 0; i < places.size(); i++) {
+                IO.println((i + 1) + ". " + places.get(i));
+            }
+
+            IO.println("Choose a place to delete (1-" + places.size() + "):");
 
         try {
             int choice = Integer.parseInt(IO.readln().trim());
@@ -143,6 +165,8 @@ public class ClientHandler {
             IO.println("Please enter a whole number.");
         } catch (IllegalArgumentException e) {
             IO.println("Could not delete place: " + e.getMessage());
+        }catch (SQLException e) {
+            IO.println("Database error while deleting place: " + e.getMessage());
         }
     }
 
@@ -156,7 +180,7 @@ public class ClientHandler {
 
         } catch (NumberFormatException e) {
             IO.println("Enter a valid whole number for minutes and a decimal number for EUR.");
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException|SQLException e) {
             IO.println("Invalid plan request: " + e.getMessage());
         }
     }

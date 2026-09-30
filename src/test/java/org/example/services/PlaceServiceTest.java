@@ -2,20 +2,33 @@ package org.example.services;
 
 import org.example.models.Category;
 import org.example.models.Place;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class PlaceServiceTest {
 
-    private Place createPlace() {
+    private PlaceRepository repository;
+    private PlaceService service;
+
+    @BeforeEach
+    void setUp() {
+        repository = mock(PlaceRepository.class);
+        service = new PlaceService(repository);
+    }
+
+    private Place createPlace(String name) {
         return new Place(
                 UUID.randomUUID(),
-                "History Museum",
+                name,
                 Category.MUSEUM,
                 90,
                 new BigDecimal("12.00"),
@@ -24,80 +37,81 @@ class PlaceServiceTest {
     }
 
     @Test
-    void addsAndReturnsPlace() {
-        PlaceService service = new PlaceService();
-        Place museum = createPlace();
+    void addPlaceDelegatesToRepository() throws SQLException {
+        Place place = createPlace("History Museum");
 
-        service.addPlace(museum);
+        service.addPlace(place);
 
-        assertEquals(1, service.getAllPlaces().size());
-        assertEquals(museum, service.getAllPlaces().getFirst());
+        verify(repository).addPlace(place);
     }
 
     @Test
-    void findsPlaceById() {
-        PlaceService service = new PlaceService();
-        Place museum = createPlace();
+    void addPlaceRejectsNullWithoutCallingRepository() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addPlace(null));
 
-        service.addPlace(museum);
-
-        Place result = service.getById(museum.getId());
-
-        assertEquals(museum, result);
+        verifyNoInteractions(repository);
     }
 
     @Test
-    void searchesPlaceByPartOfNameIgnoringCase() {
-        PlaceService service = new PlaceService();
-        Place museum = createPlace();
+    void getAllPlacesReturnsRepositoryResult() throws SQLException {
+        Place place = createPlace("History Museum");
+        when(repository.getAllPlaces()).thenReturn(List.of(place));
 
-        service.addPlace(museum);
+        List<Place> result = service.getAllPlaces();
 
-        assertEquals(
-                1,
-                service.searchByName("history").size()
-        );
+        assertEquals(List.of(place), result);
+        verify(repository).getAllPlaces();
     }
 
     @Test
-    void removesPlaceById() {
-        PlaceService service = new PlaceService();
-        Place museum = createPlace();
+    void searchMatchesPartOfNameIgnoringCase() throws SQLException {
+        Place museum = createPlace("History Museum");
+        Place gallery = createPlace("Art Gallery");
+        when(repository.getAllPlaces())
+                .thenReturn(List.of(museum, gallery));
 
-        service.addPlace(museum);
-        service.removePlace(museum.getId());
+        List<Place> result = service.searchPlaces("  HISTORY  ");
 
-        assertTrue(service.getAllPlaces().isEmpty());
+        assertEquals(1, result.size());
+        assertEquals(museum.getId(), result.getFirst().getId());
+        verify(repository).getAllPlaces();
     }
 
     @Test
-    void rejectsDuplicateId() {
-        PlaceService service = new PlaceService();
+    void searchRejectsBlankQueryWithoutCallingRepository() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.searchPlaces("   "));
+
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void removePlaceDelegatesToRepository() throws SQLException {
         UUID id = UUID.randomUUID();
+        when(repository.remove(id)).thenReturn(true);
 
-        Place first = new Place(
-                id,
-                "Museum",
-                Category.MUSEUM,
-                90,
-                new BigDecimal("12.00"),
-                Set.of("history")
-        );
+        service.removePlace(id);
 
-        Place second = new Place(
-                id,
-                "Another Museum",
-                Category.MUSEUM,
-                60,
-                new BigDecimal("8.00"),
-                Set.of("art")
-        );
+        verify(repository).remove(id);
+    }
 
-        service.addPlace(first);
+    @Test
+    void removePlaceRejectsUnknownId() throws SQLException {
+        UUID id = UUID.randomUUID();
+        when(repository.remove(id)).thenReturn(false);
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> service.addPlace(second)
-        );
+        assertThrows(IllegalArgumentException.class,
+                () -> service.removePlace(id));
+
+        verify(repository).remove(id);
+    }
+
+    @Test
+    void removePlaceRejectsNullWithoutCallingRepository() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.removePlace(null));
+
+        verifyNoInteractions(repository);
     }
 }

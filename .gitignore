@@ -38,8 +38,3 @@ build/
 ### Mac OS ###
 .DS_Store
 
-### SQLite db###
-/routeforger.db
-/routeforger.db-wal
-/routeforger.db-shm
-/routeforger.db-journal

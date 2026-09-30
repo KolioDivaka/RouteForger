@@ -20,6 +20,12 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.53.4.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.20.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <properties>
         <maven.compiler.source>27</maven.compiler.source>
