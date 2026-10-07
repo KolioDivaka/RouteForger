@@ -26,7 +26,9 @@ public class Place {
         return id;
     }
 
-
+    public Category getCategory() {
+        return category;
+    }
 
     public String getName() {
         return name;

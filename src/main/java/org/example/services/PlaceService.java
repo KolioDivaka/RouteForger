@@ -2,41 +2,50 @@ package org.example.services;
 
 import org.example.models.Place;
 
-import java.util.ArrayList;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 public class PlaceService {
-    private final List<Place> places = new ArrayList<>();
 
-    public void addPlace(Place place){
-        if(place == null){
+    private  final PlaceRepository placeRepository ;
+    public PlaceService(PlaceRepository placeRepository){
+        this.placeRepository =  Objects.requireNonNull(placeRepository, "placeRepository");
+    }
+
+
+
+    public void addPlace(Place place) throws SQLException {
+        if (place == null) {
             throw new IllegalArgumentException("Place cannot be null!");
         }
-        if(places.stream().noneMatch(p->p.getId().equals(place.getId()))){
-            places.add(place);
+
+        placeRepository.addPlace(place);
+    }
+
+    public List<Place> getAllPlaces() throws SQLException {
+        return placeRepository.getAllPlaces();
+    }
+
+    public List<Place> searchPlaces(String query) throws SQLException {
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException("Search cannot be empty!");
         }
-        else {
-            throw new IllegalArgumentException("Place with this id already exist!");
-        }
+
+        String needle = query.trim().toLowerCase(Locale.ROOT);
+
+        return placeRepository.getAllPlaces().stream()
+                .filter(place -> place.getName()
+                        .toLowerCase(Locale.ROOT)
+                        .contains(needle))
+                .toList();
     }
 
-    public List<Place> getAllPlaces(){
-        return List.copyOf(places);
-    }
+    public void removePlace (UUID id) throws SQLException{
 
-    public Place getById(UUID id){
-        return places.stream().filter(p -> p.getId().equals(id)).findFirst().orElse(null);
-    }
-
-    public List<Place> searchByName(String name){
-        String normalize = name.toLowerCase().trim();
-
-        return places.stream().filter(p->p.getName().toLowerCase().contains(normalize)).toList();
-    }
-
-    public void removePlace (UUID id){
-        boolean remove = places.removeIf(p -> p.getId().equals(id));
+        boolean remove = placeRepository.remove(id);
 
         if (!remove){
             throw new IllegalArgumentException("No place found with id : "+ id);
