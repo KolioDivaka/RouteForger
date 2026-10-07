@@ -1,47 +1,93 @@
 # RouteForger
 
-RouteForger is a Java console application for building a simple itinerary from a collection of places. You can manage places in a SQLite database, then generate an itinerary based on your available time, budget, and interests.
+RouteForger is a Java console application for managing places and generating simple itineraries. It stores places in a SQLite database, allowing data to persist between application runs.
 
 ## Features
 
-- List, add, remove, and search places by name.
-- Store places and their tags in SQLite so changes persist between runs.
-- Give each place a category, visit duration, price in EUR, and set of tags.
-- Generate an itinerary using a greedy planning approach.
+- List saved places
+- Add a place with a name, category, visit duration, price, and tags
+- Remove a place from the catalog
+- Search places by a partial name without case sensitivity
+- Generate an itinerary from available time, budget, and interests
+- Persist places and tags with SQLite and JDBC
 
-## Tech stack
+## Architecture
+
+RouteForger is a layered Java console application:
+
+- **ClientHandler** — displays the console menu, reads user input, and prints results
+- **PlaceService** — validates place operations and provides name searching
+- **PlaceRepository** — handles SQLite/JDBC queries for adding, reading, and removing places
+- **GreedyPlanner** — creates an itinerary from a `PlanRequest` and the available places
+- **Database / DatabaseInitializer** — opens the SQLite connection and creates the database schema
+
+This project is not a microservices application. Its service classes are parts of one Java application, with clear separation of responsibilities.
+
+## Data model
+
+Each place contains:
+
+- A UUID identifier
+- A name
+- A `Category` enum value
+- Visit duration in minutes
+- A price represented as `BigDecimal` in Java
+- A set of interest tags
+
+SQLite stores prices as integer cents to avoid floating-point precision issues. Tags are stored in a separate `place_tags` table linked to `places`.
+
+## Technologies
 
 - Java
-- SQLite and JDBC
-- JUnit 5 for testing
-- Mockito for service unit tests
+- SQLite
+- JDBC
+- JUnit 5
+- Mockito
+- Maven
 
 ## Getting started
 
-1. Clone the repository and open it in IntelliJ IDEA.
-2. Let IntelliJ import the project and resolve its dependencies.
-3. Run `org.example.Main`.
-4. Use the numbered console menu to manage places or generate an itinerary.
+1. Clone the repository:
 
-The application initializes its database tables at startup. It uses a SQLite file named `routeforger.db` in the application's working directory. If the repository includes a prepared demo database, it will contain sample places; otherwise, you can add places through the menu.
+   ```bash
+   git clone https://github.com/<your-username>/RouteForger.git
+   ```
 
-## How planning works
+2. Open the project in IntelliJ IDEA.
 
-Enter the time you have available, your budget in EUR, and interests separated by commas. RouteForger passes the request and the stored places to `GreedyPlanner`, which produces an itinerary with selected places, total time, and total price.
+3. Allow Maven to download and resolve project dependencies.
 
-## Project structure
+4. Run `org.example.Main`.
 
-- `models` — places, categories, plan requests, and itineraries.
-- `database` — SQLite connections and table initialization.
-- `services/PlaceRepository` — reads and writes places and tags.
-- `services/PlaceService` — place validation and name search.
-- `services/GreedyPlanner` — itinerary generation.
-- `ClientHandler` — console menu and input handling.
+5. Use the menu displayed in the console.
 
-## Tests
+At startup, RouteForger initializes the SQLite schema if it does not already exist. The application uses a local SQLite database file named `routeforger.db` in the working directory.
 
-Run the tests from IntelliJ's test runner. Repository tests use a separate temporary SQLite database; service unit tests mock the repository.
+## Menu options
+
+```text
+1. List places
+2. Add place
+3. Remove place
+4. Generate itinerary
+5. Search places by name
+0. Exit
+```
+
+## Testing
+
+The project includes two categories of tests:
+
+- **Repository integration tests** use a temporary SQLite database to test inserts, reads, tag mapping, and deletion.
+- **Service unit tests** use Mockito to mock `PlaceRepository` and test service-level validation, searching, and delegation independently from SQLite.
+
+Run the tests through IntelliJ IDEA or with Maven:
+
+```bash
+mvn test
+```
 
 ## Notes
 
-RouteForger stores prices as integer cents in SQLite and uses `BigDecimal` for EUR amounts in Java. Place IDs use UUIDs, and categories use a Java enum.
+- Database-related files such as SQLite WAL and shared-memory files should normally be excluded from version control.
+- A prepared demo database can be committed for demonstration purposes, but do not include private or sensitive data.
